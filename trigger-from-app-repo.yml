@@ -1,0 +1,25 @@
+# ──────────────────────────────────────────────────────────────
+# COPY THIS FILE to your multi-agent-ide repo at:
+#   .github/workflows/update-homebrew.yml
+#
+# You also need to create a GitHub Personal Access Token (PAT)
+# with `repo` scope and add it as a secret named HOMEBREW_TAP_TOKEN
+# in the multi-agent-ide repo settings.
+# ──────────────────────────────────────────────────────────────
+name: Update Homebrew Tap
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  notify-tap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger tap update
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          repository: baoduy/homebrew-magenta
+          event-type: release-published
+          client-payload: '{"version": "${{ github.event.release.tag_name }}"}'

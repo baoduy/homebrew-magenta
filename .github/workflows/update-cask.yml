@@ -1,0 +1,104 @@
+name: Update Homebrew Cask
+
+# This workflow can be triggered manually or called via repository_dispatch
+# from the main multi-agent-ide repo when a new release is published.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (without 'v' prefix, e.g. 0.1.0)"
+        required: true
+        type: string
+  repository_dispatch:
+    types: [release-published]
+
+jobs:
+  update-cask:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout tap repo
+        uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            VERSION="${{ github.event.client_payload.version }}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+          # Strip leading 'v' if present
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Download release assets and compute SHA256
+        id: sha
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          BASE_URL="https://github.com/baoduy/multi-agent-ide/releases/download/v${VERSION}"
+
+          echo "Downloading arm64 DMG..."
+          curl -sL "${BASE_URL}/Magenta.IDE-${VERSION}-mac-arm64.dmg" -o arm64.dmg
+          SHA_ARM64=$(shasum -a 256 arm64.dmg | awk '{print $1}')
+          echo "arm64 SHA256: $SHA_ARM64"
+
+          echo "Downloading x64 DMG..."
+          curl -sL "${BASE_URL}/Magenta.IDE-${VERSION}-mac-x64.dmg" -o x64.dmg
+          SHA_X64=$(shasum -a 256 x64.dmg | awk '{print $1}')
+          echo "x64 SHA256: $SHA_X64"
+
+          echo "sha_arm64=$SHA_ARM64" >> "$GITHUB_OUTPUT"
+          echo "sha_x64=$SHA_X64" >> "$GITHUB_OUTPUT"
+
+      - name: Update cask formula
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          SHA_ARM64: ${{ steps.sha.outputs.sha_arm64 }}
+          SHA_X64: ${{ steps.sha.outputs.sha_x64 }}
+        run: |
+          CASK_FILE="Casks/magenta-ide.rb"
+
+          cat > "$CASK_FILE" << RUBY
+          cask "magenta-ide" do
+            version "${VERSION}"
+
+            on_arm do
+              sha256 "${SHA_ARM64}"
+              url "https://github.com/baoduy/multi-agent-ide/releases/download/v#{version}/Magenta.IDE-#{version}-mac-arm64.dmg"
+            end
+
+            on_intel do
+              sha256 "${SHA_X64}"
+              url "https://github.com/baoduy/multi-agent-ide/releases/download/v#{version}/Magenta.IDE-#{version}-mac-x64.dmg"
+            end
+
+            name "Magenta IDE"
+            desc "Multi-repo multi-agent IDE for spec-driven development"
+            homepage "https://github.com/baoduy/multi-agent-ide"
+
+            depends_on macos: ">= :ventura"
+
+            app "Magenta IDE.app"
+
+            zap trash: [
+              "~/Library/Application Support/Magenta IDE",
+              "~/Library/Preferences/com.magenta-ide.plist",
+              "~/Library/Logs/Magenta IDE",
+            ]
+          end
+          RUBY
+
+          # Remove leading whitespace from heredoc
+          sed -i 's/^          //' "$CASK_FILE"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/magenta-ide.rb
+          git commit -m "Update magenta-ide to v${{ steps.version.outputs.version }}"
+          git push
