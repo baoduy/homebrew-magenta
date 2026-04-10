@@ -19,6 +19,11 @@ cask "magenta-ide" do
 
   app "Magenta IDE.app"
 
+  postflight do
+    system_command "/usr/bin/xattr",
+                   args: ["-cr", "#{appdir}/Magenta IDE.app"]
+  end
+
   zap trash: [
     "~/Library/Application Support/Magenta IDE",
     "~/Library/Preferences/com.magenta-ide.plist",
