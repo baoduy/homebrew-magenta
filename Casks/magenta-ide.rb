@@ -2,12 +2,12 @@ cask "magenta-ide" do
   version "0.0.1"
 
   on_arm do
-    sha256 :no_check # Will be auto-populated by GitHub Actions
+    sha256 "79341cbbcc9c01cf733aa37ee001b44f0ee6450bb9e51636a291bfb60dfd7591"
     url "https://github.com/baoduy/multi-agent-ide/releases/download/v#{version}/Magenta.IDE-#{version}-mac-arm64.dmg"
   end
 
   on_intel do
-    sha256 :no_check # Will be auto-populated by GitHub Actions
+    sha256 "957ff33b459c822573f183be974b0410970d8b2646ccd5d226d8b63dabec6ca3"
     url "https://github.com/baoduy/multi-agent-ide/releases/download/v#{version}/Magenta.IDE-#{version}-mac-x64.dmg"
   end
 
