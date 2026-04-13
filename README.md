@@ -15,6 +15,14 @@ brew install --cask magenta-ide
 brew upgrade --cask magenta-ide
 ```
 
+## Check For New Releases
+
+The cask uses Homebrew `livecheck` to detect the latest GitHub release while keeping installs pinned to an explicit version and checksum.
+
+```bash
+brew livecheck --cask baoduy/magenta/magenta-ide
+```
+
 ## Uninstall
 
 ```bash

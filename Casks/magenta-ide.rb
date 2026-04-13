@@ -15,6 +15,11 @@ cask "magenta-ide" do
   desc "Multi-repo multi-agent IDE for spec-driven development"
   homepage "https://github.com/baoduy/multi-agent-ide"
 
+  livecheck do
+    url :url
+    strategy :github_latest
+  end
+
   depends_on macos: ">= :ventura"
 
   app "Magenta IDE.app"
