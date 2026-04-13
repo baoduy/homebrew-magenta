@@ -1,13 +1,13 @@
 cask "magenta-ide" do
-  version "0.0.4"
+  version ""
 
   on_arm do
-    sha256 "21dbac908a1badc8c69dddff47061f9b5fc0c3aa90749031a25e397e9064e68d"
+    sha256 "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
     url "https://github.com/baoduy/multi-agent-ide/releases/download/v#{version}/Magenta.IDE-#{version}-mac-arm64.dmg"
   end
 
   on_intel do
-    sha256 "733275c140eda842ed3dedade1faba291f96e07c504facc5321e1d73712a958e"
+    sha256 "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
     url "https://github.com/baoduy/multi-agent-ide/releases/download/v#{version}/Magenta.IDE-#{version}-mac-x64.dmg"
   end
 
@@ -18,6 +18,11 @@ cask "magenta-ide" do
   depends_on macos: ">= :ventura"
 
   app "Magenta IDE.app"
+
+  postflight do
+    system_command "/usr/bin/xattr",
+         args: ["-cr", "#{appdir}/Magenta IDE.app"]
+  end
 
   zap trash: [
     "~/Library/Application Support/Magenta IDE",
