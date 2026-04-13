@@ -1,5 +1,5 @@
 cask "magenta-ide" do
-  version "0.0.1"
+  version "0.0.4"
 
   on_arm do
     sha256 "79341cbbcc9c01cf733aa37ee001b44f0ee6450bb9e51636a291bfb60dfd7591"
