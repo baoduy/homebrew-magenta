@@ -1,13 +1,13 @@
 cask "magenta-ide" do
-  version "0.0.5"
+  version ""
 
   on_arm do
-    sha256 "c349d8a2339337a8e0457f62ce056b3b4e90461e6622c369af55d555fa1c7792"
+    sha256 "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
     url "https://github.com/baoduy/multi-agent-ide/releases/download/v#{version}/Magenta.IDE-#{version}-mac-arm64.dmg"
   end
 
   on_intel do
-    sha256 "cb908eafa29c2435457e558700f80f645b3fce16c9a73cb30e8362098b7893fd"
+    sha256 "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
     url "https://github.com/baoduy/multi-agent-ide/releases/download/v#{version}/Magenta.IDE-#{version}-mac-x64.dmg"
   end
 
