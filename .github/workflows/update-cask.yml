@@ -39,12 +39,48 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          BASE_URL="https://github.com/baoduy/multi-agent-ide/releases/download/v${VERSION}"
+          API_BASE="https://api.github.com/repos/baoduy/multi-agent-ide/releases/tags"
+
+          RELEASE_TAG=""
+          for TAG in "v${VERSION}" "${VERSION}"; do
+            if curl -fsSL --retry 3 --retry-all-errors --retry-delay 2 "${API_BASE}/${TAG}" -o release.json; then
+              RELEASE_TAG="$TAG"
+              break
+            fi
+          done
+
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "Release not found for version ${VERSION} (tried tags: v${VERSION}, ${VERSION})" >&2
+            exit 1
+          fi
+
+          echo "Using release tag: ${RELEASE_TAG}"
+
+          ARM_URL=""
+          X64_URL=""
+          for ATTEMPT in {1..20}; do
+            ARM_URL=$(ruby -rjson -e 'j=JSON.parse(File.read("release.json")); a=j.fetch("assets",[]).find{|x| x["name"].to_s.end_with?("-mac-arm64.dmg")}; puts(a ? a["browser_download_url"] : "")')
+            X64_URL=$(ruby -rjson -e 'j=JSON.parse(File.read("release.json")); a=j.fetch("assets",[]).find{|x| x["name"].to_s.end_with?("-mac-x64.dmg")}; puts(a ? a["browser_download_url"] : "")')
+
+            if [ -n "$ARM_URL" ] && [ -n "$X64_URL" ]; then
+              break
+            fi
+
+            echo "Assets not ready yet (attempt ${ATTEMPT}/20). Waiting 15s..."
+            sleep 15
+            curl -fsSL --retry 3 --retry-all-errors --retry-delay 2 "${API_BASE}/${RELEASE_TAG}" -o release.json
+          done
+
+          if [ -z "$ARM_URL" ] || [ -z "$X64_URL" ]; then
+            echo "Could not find required DMG assets in release ${RELEASE_TAG}." >&2
+            echo "Expected assets ending with -mac-arm64.dmg and -mac-x64.dmg." >&2
+            exit 1
+          fi
 
           echo "Downloading arm64 DMG..."
-          curl -fsSL --retry 3 --retry-all-errors --retry-delay 2 "${BASE_URL}/Magenta.IDE-${VERSION}-mac-arm64.dmg" -o arm64.dmg
+          curl -fsSL --retry 3 --retry-all-errors --retry-delay 2 "$ARM_URL" -o arm64.dmg
           ARM64_MIME=$(file --brief --mime-type arm64.dmg)
-          if [ "$ARM64_MIME" != "application/x-apple-diskimage" ] && [ "$ARM64_MIME" != "application/zlib" ]; then
+          if [ "$ARM64_MIME" != "application/x-apple-diskimage" ] && [ "$ARM64_MIME" != "application/octet-stream" ] && [ "$ARM64_MIME" != "application/zlib" ]; then
             echo "arm64 asset is not a DMG file (mime-type: $ARM64_MIME)" >&2
             exit 1
           fi
@@ -52,9 +88,9 @@ jobs:
           echo "arm64 SHA256: $SHA_ARM64"
 
           echo "Downloading x64 DMG..."
-          curl -fsSL --retry 3 --retry-all-errors --retry-delay 2 "${BASE_URL}/Magenta.IDE-${VERSION}-mac-x64.dmg" -o x64.dmg
+          curl -fsSL --retry 3 --retry-all-errors --retry-delay 2 "$X64_URL" -o x64.dmg
           X64_MIME=$(file --brief --mime-type x64.dmg)
-          if [ "$X64_MIME" != "application/x-apple-diskimage" ] && [ "$X64_MIME" != "application/zlib" ]; then
+          if [ "$X64_MIME" != "application/x-apple-diskimage" ] && [ "$X64_MIME" != "application/octet-stream" ] && [ "$X64_MIME" != "application/zlib" ]; then
             echo "x64 asset is not a DMG file (mime-type: $X64_MIME)" >&2
             exit 1
           fi
