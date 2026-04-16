@@ -69,11 +69,13 @@ jobs:
           SOURCE_REPO: ${{ steps.source.outputs.source_repo }}
         run: |
           API_BASE="https://api.github.com/repos/${SOURCE_REPO}/releases/tags"
+          RETRY_ATTEMPTS=12
+          RETRY_DELAY_SECONDS=15
 
           RELEASE_TAG=""
-          for ATTEMPT in {1..12}; do
+          for ATTEMPT in $(seq 1 "$RETRY_ATTEMPTS"); do
             for TAG in "v${VERSION}" "${VERSION}"; do
-              if curl -fsSL "${API_BASE}/${TAG}" -o release.json; then
+              if curl -fsSL --retry 3 --retry-all-errors --retry-delay 2 "${API_BASE}/${TAG}" -o release.json; then
                 RELEASE_TAG="$TAG"
                 break
               fi
@@ -83,8 +85,8 @@ jobs:
               break
             fi
 
-            echo "Release not found yet in ${SOURCE_REPO} for version ${VERSION} (attempt ${ATTEMPT}/12). Waiting 15s..."
-            sleep 15
+            echo "Release not found yet in ${SOURCE_REPO} for version ${VERSION} (attempt ${ATTEMPT}/${RETRY_ATTEMPTS}). Waiting ${RETRY_DELAY_SECONDS}s..."
+            sleep "$RETRY_DELAY_SECONDS"
           done
 
           if [ -z "$RELEASE_TAG" ]; then
