@@ -85,8 +85,10 @@ jobs:
               break
             fi
 
-            echo "Release not found yet in ${SOURCE_REPO} for version ${VERSION} (attempt ${ATTEMPT}/${RETRY_ATTEMPTS}). Waiting ${RETRY_DELAY_SECONDS}s..."
-            sleep "$RETRY_DELAY_SECONDS"
+            if [ "$ATTEMPT" -lt "$RETRY_ATTEMPTS" ]; then
+              echo "Release not found yet in ${SOURCE_REPO} for version ${VERSION} (attempt ${ATTEMPT}/${RETRY_ATTEMPTS}). Waiting ${RETRY_DELAY_SECONDS}s..."
+              sleep "$RETRY_DELAY_SECONDS"
+            fi
           done
 
           if [ -z "$RELEASE_TAG" ]; then
