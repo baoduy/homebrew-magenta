@@ -14,6 +14,7 @@ brew install --cask magenta-ide
 If the tap already contains a newer pinned cask version, upgrade with:
 
 ```bash
+brew update
 brew upgrade --cask magenta-ide
 ```
 
