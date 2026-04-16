@@ -52,13 +52,10 @@ jobs:
             SOURCE_REPO="baoduy/multi-agent-ide"
           fi
 
-          case "$SOURCE_REPO" in
-            */*) ;;
-            *)
-              echo "Invalid source_repo value: $SOURCE_REPO (expected owner/repo)" >&2
-              exit 1
-              ;;
-          esac
+          if ! [[ "$SOURCE_REPO" =~ ^[^/]+/[^/]+$ ]]; then
+            echo "Invalid source_repo value: $SOURCE_REPO (expected owner/repo)" >&2
+            exit 1
+          fi
 
           echo "source_repo=$SOURCE_REPO" >> "$GITHUB_OUTPUT"
 
@@ -86,7 +83,7 @@ jobs:
             fi
 
             if [ "$ATTEMPT" -lt "$RETRY_ATTEMPTS" ]; then
-              echo "Release not found yet in ${SOURCE_REPO} for version ${VERSION} (attempt ${ATTEMPT}/${RETRY_ATTEMPTS}). Waiting ${RETRY_DELAY_SECONDS}s..."
+              echo "Release not found yet in ${SOURCE_REPO} for version ${VERSION} (attempt ${ATTEMPT}/${RETRY_ATTEMPTS}). Waiting ${RETRY_DELAY_SECONDS} seconds..."
               sleep "$RETRY_DELAY_SECONDS"
             fi
           done
