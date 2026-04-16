@@ -9,6 +9,11 @@ on:
         description: "Release version (without 'v' prefix, e.g. 0.1.0)"
         required: true
         type: string
+      source_repo:
+        description: "Source GitHub repository in owner/repo format"
+        required: false
+        default: "baoduy/multi-agent-ide"
+        type: string
   repository_dispatch:
     types: [release-published]
 
@@ -34,23 +39,57 @@ jobs:
           VERSION="${VERSION#v}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Determine source repository
+        id: source
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            SOURCE_REPO="${{ github.event.client_payload.source_repo }}"
+          else
+            SOURCE_REPO="${{ inputs.source_repo }}"
+          fi
+
+          if [ -z "$SOURCE_REPO" ]; then
+            SOURCE_REPO="baoduy/multi-agent-ide"
+          fi
+
+          if ! [[ "$SOURCE_REPO" =~ ^[^/]+/[^/]+$ ]]; then
+            echo "Invalid source_repo value: $SOURCE_REPO (expected owner/repo)" >&2
+            exit 1
+          fi
+
+          echo "source_repo=$SOURCE_REPO" >> "$GITHUB_OUTPUT"
+
       - name: Download release assets and compute SHA256
         id: sha
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          SOURCE_REPO: ${{ steps.source.outputs.source_repo }}
         run: |
-          API_BASE="https://api.github.com/repos/baoduy/multi-agent-ide/releases/tags"
+          API_BASE="https://api.github.com/repos/${SOURCE_REPO}/releases/tags"
+          RETRY_ATTEMPTS=12
+          RETRY_DELAY_SECONDS=15
 
           RELEASE_TAG=""
-          for TAG in "v${VERSION}" "${VERSION}"; do
-            if curl -fsSL --retry 3 --retry-all-errors --retry-delay 2 "${API_BASE}/${TAG}" -o release.json; then
-              RELEASE_TAG="$TAG"
+          for ATTEMPT in $(seq 1 "$RETRY_ATTEMPTS"); do
+            for TAG in "v${VERSION}" "${VERSION}"; do
+              if curl -fsSL --retry 3 --retry-all-errors --retry-delay 2 "${API_BASE}/${TAG}" -o release.json; then
+                RELEASE_TAG="$TAG"
+                break
+              fi
+            done
+
+            if [ -n "$RELEASE_TAG" ]; then
               break
+            fi
+
+            if [ "$ATTEMPT" -lt "$RETRY_ATTEMPTS" ]; then
+              echo "Release not found yet in ${SOURCE_REPO} for version ${VERSION} (attempt ${ATTEMPT}/${RETRY_ATTEMPTS}). Waiting ${RETRY_DELAY_SECONDS} seconds..."
+              sleep "$RETRY_DELAY_SECONDS"
             fi
           done
 
           if [ -z "$RELEASE_TAG" ]; then
-            echo "Release not found for version ${VERSION} (tried tags: v${VERSION}, ${VERSION})" >&2
+            echo "Release not found in ${SOURCE_REPO} for version ${VERSION} (tried tags: v${VERSION}, ${VERSION})" >&2
             exit 1
           fi
 
@@ -114,17 +153,17 @@ jobs:
 
             on_arm do
               sha256 "${SHA_ARM64}"
-              url "https://github.com/baoduy/multi-agent-ide/releases/download/v#{version}/Magenta.IDE-#{version}-mac-arm64.dmg"
+              url "https://github.com/${{ steps.source.outputs.source_repo }}/releases/download/v#{version}/Magenta.IDE-#{version}-mac-arm64.dmg"
             end
 
             on_intel do
               sha256 "${SHA_X64}"
-              url "https://github.com/baoduy/multi-agent-ide/releases/download/v#{version}/Magenta.IDE-#{version}-mac-x64.dmg"
+              url "https://github.com/${{ steps.source.outputs.source_repo }}/releases/download/v#{version}/Magenta.IDE-#{version}-mac-x64.dmg"
             end
 
             name "Magenta IDE"
             desc "Multi-repo multi-agent IDE for spec-driven development"
-            homepage "https://github.com/baoduy/multi-agent-ide"
+            homepage "https://github.com/${{ steps.source.outputs.source_repo }}"
 
             depends_on macos: ">= :ventura"
 

@@ -22,4 +22,4 @@ jobs:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           repository: baoduy/homebrew-magenta
           event-type: release-published
-          client-payload: '{"version": "${{ github.event.release.tag_name }}"}'
+          client-payload: '{"version": "${{ github.event.release.tag_name }}", "source_repo": "${{ github.repository }}"}'
