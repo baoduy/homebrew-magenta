@@ -71,9 +71,9 @@ jobs:
           API_BASE="https://api.github.com/repos/${SOURCE_REPO}/releases/tags"
 
           RELEASE_TAG=""
-          for ATTEMPT in {1..20}; do
+          for ATTEMPT in {1..12}; do
             for TAG in "v${VERSION}" "${VERSION}"; do
-              if curl -fsSL --retry 3 --retry-all-errors --retry-delay 2 "${API_BASE}/${TAG}" -o release.json; then
+              if curl -fsSL "${API_BASE}/${TAG}" -o release.json; then
                 RELEASE_TAG="$TAG"
                 break
               fi
@@ -83,7 +83,7 @@ jobs:
               break
             fi
 
-            echo "Release not found yet in ${SOURCE_REPO} for version ${VERSION} (attempt ${ATTEMPT}/20). Waiting 15s..."
+            echo "Release not found yet in ${SOURCE_REPO} for version ${VERSION} (attempt ${ATTEMPT}/12). Waiting 15s..."
             sleep 15
           done
 
