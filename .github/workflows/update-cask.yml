@@ -119,7 +119,7 @@ jobs:
           echo "Downloading arm64 DMG..."
           curl -fsSL --retry 3 --retry-all-errors --retry-delay 2 "$ARM_URL" -o arm64.dmg
           ARM64_MIME=$(file --brief --mime-type arm64.dmg)
-          if [ "$ARM64_MIME" != "application/x-apple-diskimage" ] && [ "$ARM64_MIME" != "application/octet-stream" ] && [ "$ARM64_MIME" != "application/zlib" ]; then
+          if [ "$ARM64_MIME" != "application/x-apple-diskimage" ] && [ "$ARM64_MIME" != "application/octet-stream" ] && [ "$ARM64_MIME" != "application/zlib" ] && [ "$ARM64_MIME" != "application/x-bzip2" ]; then
             echo "arm64 asset is not a DMG file (mime-type: $ARM64_MIME)" >&2
             exit 1
           fi
@@ -129,7 +129,7 @@ jobs:
           echo "Downloading x64 DMG..."
           curl -fsSL --retry 3 --retry-all-errors --retry-delay 2 "$X64_URL" -o x64.dmg
           X64_MIME=$(file --brief --mime-type x64.dmg)
-          if [ "$X64_MIME" != "application/x-apple-diskimage" ] && [ "$X64_MIME" != "application/octet-stream" ] && [ "$X64_MIME" != "application/zlib" ]; then
+          if [ "$X64_MIME" != "application/x-apple-diskimage" ] && [ "$X64_MIME" != "application/octet-stream" ] && [ "$X64_MIME" != "application/zlib" ] && [ "$X64_MIME" != "application/x-bzip2" ]; then
             echo "x64 asset is not a DMG file (mime-type: $X64_MIME)" >&2
             exit 1
           fi
